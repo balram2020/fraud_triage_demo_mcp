@@ -1,0 +1,36 @@
+# Environment variables (NEVER commit secrets!)
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg
+*.egg-info/
+dist/
+build/
+*.whl
+.venv/
+venv/
+env/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Docker
+*.log
+
+# Traces / runtime data
+traces/
+
+# Jupyter
+.ipynb_checkpoints/

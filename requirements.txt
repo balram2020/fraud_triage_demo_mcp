@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+pydantic
+python-dotenv
+sqlalchemy>=2.0
+psycopg[binary]
+redis
+langgraph
+langchain
+langchain-groq
+mcp

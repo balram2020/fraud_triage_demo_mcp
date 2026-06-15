@@ -1,0 +1,79 @@
+services:
+  api:
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./traces:/app/traces
+    ports:
+      - "8000:8000"
+    environment:
+      DATABASE_URL: postgresql+psycopg://agent_user:agent_pass@postgres:5432/agent_service
+      REDIS_URL: redis://redis:6379/0
+      APP_ENV: local
+      DEFAULT_MODEL: ${DEFAULT_MODEL:-llama-3.3-70b-versatile}
+      GROQ_API_KEY: ${GROQ_API_KEY}
+      USE_MOCK_LLM: ${USE_MOCK_LLM:-false}
+      RATE_LIMIT_MAX: "10"
+      TENANT_DAILY_BUDGET_USD: "1.0"
+      SESSION_BUDGET_USD: "0.05"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - agent_runtime
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+
+  mcp-server:
+    build: .
+    env_file:
+      - .env
+    command: ["python", "-m", "app.mcp_server", "--transport", "sse", "--port", "8001"]
+    ports:
+      - "8001:8001"
+    networks:
+      - agent_runtime
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: agent_user
+      POSTGRES_PASSWORD: agent_pass
+      POSTGRES_DB: agent_service
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent_user -d agent_service"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - agent_runtime
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - agent_runtime
+
+networks:
+  agent_runtime:
+    driver: bridge
+
+volumes:
+  postgres_data:
